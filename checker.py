@@ -13,7 +13,7 @@ TIMEOUT = 10
 MAX_WORKERS = 50
 
 def fetch_proxies_from_telegram() -> List[str]:
-    """Парсит прокси из Telegram канала"""
+    """Парсит прокси из Telegram канала (последние 10 сообщений)"""
     print(f"Fetching proxies from {TELEGRAM_URL}...")
     
     try:
@@ -23,9 +23,13 @@ def fetch_proxies_from_telegram() -> List[str]:
         
         # Ищем все сообщения с прокси
         messages = soup.find_all('div', class_='tgme_widget_message_text')
-        proxies = []
         
-        for msg in messages:
+        # Берем только последние 10 сообщений
+        recent_messages = messages[-10:] if len(messages) > 10 else messages
+        print(f"Processing last {len(recent_messages)} messages...")
+        
+        proxies = []
+        for msg in recent_messages:
             text = msg.get_text()
             # Паттерн для IP:PORT
             pattern = r'(?:\d{1,3}\.){3}\d{1,3}:\d{2,5}'
@@ -33,7 +37,7 @@ def fetch_proxies_from_telegram() -> List[str]:
             proxies.extend(found)
         
         unique_proxies = list(set(proxies))
-        print(f"Found {len(unique_proxies)} unique proxies")
+        print(f"Found {len(unique_proxies)} unique proxies from recent messages")
         return unique_proxies
     
     except Exception as e:
