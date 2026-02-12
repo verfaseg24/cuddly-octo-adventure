@@ -1,4 +1,4 @@
-name: SOCKS5 Proxy Checker
+name: Proxy Checker
 
 on:
   schedule:
@@ -23,7 +23,7 @@ jobs:
         
     - name: Install dependencies
       run: |
-        pip install requests pysocks beautifulsoup4
+        pip install requests beautifulsoup4
         
     - name: Run proxy checker
       run: python checker.py
