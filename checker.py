@@ -57,11 +57,11 @@ def check_proxy(proxy: str) -> Tuple[str, bool]:
         socket.socket = socket._socketobject
         
         if response.status_code == 200:
-            print(f"✓ {proxy}")
+            print(f"✓ VALID: {proxy}")
             return (proxy, True)
         
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"✗ FAILED: {proxy} - {type(e).__name__}")
     
     finally:
         # Всегда сбрасываем сокет
@@ -70,15 +70,23 @@ def check_proxy(proxy: str) -> Tuple[str, bool]:
     return (proxy, False)
 
 def main():
+    print("=" * 60)
+    print("SOCKS5 Proxy Checker")
+    print("=" * 60)
+    
     # Получаем прокси
     proxies = fetch_proxies_from_telegram()
     
     if not proxies:
-        print("No proxies found!")
+        print("❌ No proxies found!")
         return
     
-    print(f"\nChecking {len(proxies)} proxies...")
+    print(f"\n🔍 Checking {len(proxies)} proxies with {MAX_WORKERS} workers...")
+    print(f"⏱️  Timeout: {TIMEOUT}s per proxy")
+    print("-" * 60)
+    
     valid_proxies = []
+    checked = 0
     
     # Проверяем параллельно
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -86,17 +94,27 @@ def main():
         
         for future in as_completed(futures):
             proxy, is_valid = future.result()
+            checked += 1
+            
             if is_valid:
                 valid_proxies.append(proxy)
+            
+            # Прогресс
+            if checked % 10 == 0 or checked == len(proxies):
+                print(f"📊 Progress: {checked}/{len(proxies)} | Valid: {len(valid_proxies)}")
     
     # Сохраняем результаты
-    print(f"\n✓ Valid proxies: {len(valid_proxies)}/{len(proxies)}")
+    print("-" * 60)
+    print(f"✅ Valid proxies: {len(valid_proxies)}/{len(proxies)} ({len(valid_proxies)*100//len(proxies) if proxies else 0}%)")
     
     with open('valid_proxies.txt', 'w') as f:
+        f.write(f"# Updated: {__import__('datetime').datetime.now().isoformat()}\n")
+        f.write(f"# Valid: {len(valid_proxies)}/{len(proxies)}\n\n")
         for proxy in sorted(valid_proxies):
             f.write(f"{proxy}\n")
     
-    print(f"Results saved to valid_proxies.txt")
+    print(f"💾 Results saved to valid_proxies.txt")
+    print("=" * 60)
 
 if __name__ == "__main__":
     main()
